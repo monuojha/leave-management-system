@@ -66,24 +66,38 @@ git clone <repository-url>
 cd leave-management-system
 
 
-# Install all dependencies
-npm run install
+
+# frontend setup
+cd frontend
 
 # Set up environment variables
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp frontend/.env.sample frontend/.env
 
-# Configure your database and Redis URLs in backend/.env
+# Install dependencies
+npm install
 
-# Run database migrations
-cd backend
-npm run prisma:migrate
-npm run prisma:generate
-
-# Start development servers
-cd ..
+# Start the development server
 npm run dev
 
+
+
+
+
+# backend setup
+cd backend
+
+# Set up environment variables
+cp backend/.env.sample backend/.env
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+
+
+
+# Set up environment variables in .env 
 
 # Database
 DATABASE_URL="mysql://user:password@localhost:3306/leave_management"
@@ -112,10 +126,6 @@ NODE_ENV="development"
 FRONTEND_URL="http://localhost:3000"
 
 
-### Frontend Environment Variables
-\`\`\`env
-VITE_API_URL="http://localhost:5000/api"
-VITE_APP_NAME="Leave Management System"
 
 ## 📱 Usage
 
