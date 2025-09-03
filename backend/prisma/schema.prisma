@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            Role      @default(EMPLOYEE)
+  profileImage    String?
+  phoneNumber     String?
+  dateOfBirth     DateTime?
+  address         String?   @db.Text
+  isActive        Boolean   @default(true)
+  isEmailVerified Boolean   @default(false)
+  departmentId    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  leaveRequests  LeaveRequest[]  @relation("UserLeaveRequests")
+  approvals      LeaveRequest[]  @relation("ApproverLeaveRequests")
+  leaveBalances  LeaveBalance[]
+  otps           OTP[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  managerId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users User[]
+
+  @@map("departments")
+}
+
+model LeaveRequest {
+  id          String      @id @default(cuid())
+  userId      String
+  leaveType   LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  days        Float
+  reason      String      @db.Text
+  status      LeaveStatus @default(PENDING)
+  isHalfDay   Boolean     @default(false)
+  approverId  String?
+  approvedAt  DateTime?
+  comments    String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user     User  @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+  approver User? @relation("ApproverLeaveRequests", fields: [approverId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+  @@map("leave_requests")
+}
+
+model LeaveBalance {
+  id        String    @id @default(cuid())
+  userId    String
+  leaveType LeaveType
+  total Float     @default(20)
+  used      Float     @default(0)
+  remaining Float     @default(0)
+  year      Int        @default(2025)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leaveType, year])
+  @@index([userId])
+  @@map("leave_balances")
+}
+
+model OTP {
+  id        String  @id @default(cuid())
+  userId    String
+  otp       String
+  type      OTPType
+  expiresAt DateTime
+  isUsed    Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([otp])
+  @@map("otps")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR
+  ADMIN
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  MATERNITY
+  PATERNITY
+  PERSONAL
+  EMERGENCY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum OTPType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
